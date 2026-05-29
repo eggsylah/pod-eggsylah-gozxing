@@ -13,7 +13,9 @@ does image decoding and QR processing out of process.
 
 ```clojure
 (require '[babashka.pods :as pods])
-(pods/load-pod "./pod-babashka-gozxing")
+(pods/load-pod 'org.babashka/gozxing "0.0.1")
+;; or load a local build:
+;; (pods/load-pod "./pod-babashka-gozxing")
 (require '[pod.babashka.gozxing :as qr])
 
 ;; encode text into a QR png
