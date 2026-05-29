@@ -1,0 +1,32 @@
+{:paths ["script"]
+ :tasks
+ {:requires ([babashka.fs :as fs]
+             [clojure.string :as str])
+
+  build
+  {:doc "Build the pod binary"
+   :task (shell "script/build")}
+
+  test
+  {:doc "Build and run the pod tests"
+   :depends [build]
+   :task (load-file "test/script.clj")}
+
+  publish
+  {:doc "Tag the current version and push, triggering the release workflow"
+   :task
+   (let [version (str/trim (slurp "resources/POD_BABASHKA_GOZXING_VERSION"))
+         tag (str "v" version)
+         clean? (str/blank? (:out (shell {:out :string} "git status --porcelain")))
+         existing (-> (shell {:out :string :continue true} "git tag --list" tag)
+                      :out str/trim)]
+     (when-not clean?
+       (println "Working tree not clean. Commit or stash first.")
+       (System/exit 1))
+     (when (seq existing)
+       (println (str "Tag " tag " already exists."))
+       (System/exit 1))
+     (println (str "Tagging " tag " and pushing..."))
+     (shell "git tag -a" tag "-m" (str "Release " tag))
+     (shell "git push origin" tag)
+     (println (str "Pushed " tag ". CI will build and publish the GitHub release.")))}}}

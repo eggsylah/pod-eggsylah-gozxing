@@ -1,0 +1,8 @@
+/pod-babashka-gozxing
+/pod-babashka-gozxing.exe
+/out/
+/release/
+/bb/
+test/out.png
+.clj-kondo/
+.lsp/

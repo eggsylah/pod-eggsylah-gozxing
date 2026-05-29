@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CGO_ENABLED=0 go build -o pod-babashka-gozxing main.go
+
+if [[ "${WINDOWS:-}" == "true" ]]; then
+    mv pod-babashka-gozxing pod-babashka-gozxing.exe
+fi

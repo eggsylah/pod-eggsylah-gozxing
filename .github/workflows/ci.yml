@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ hashFiles('.github/workflows/*.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    # gozxing is pure Go (no cgo), so every target cross-compiles from one runner.
+    # CGO_ENABLED=0 forces a fully static binary with no libc/dylib dependency.
+    - name: Build binaries
+      env:
+        CGO_ENABLED: "0"
+      run: |
+        mkdir -p out
+        build() { GOOS=$1 GOARCH=$2 go build -o "out/$3" main.go; }
+        build linux  amd64 linux-amd64/pod-babashka-gozxing
+        build linux  arm64 linux-aarch64/pod-babashka-gozxing
+        build darwin amd64 macos-amd64/pod-babashka-gozxing
+        build darwin arm64 macos-aarch64/pod-babashka-gozxing
+        build windows amd64 windows-amd64/pod-babashka-gozxing.exe
+
+    - name: Install bb for test
+      run: |
+        mkdir -p bb
+        bash <(curl -sL https://raw.githubusercontent.com/borkdude/babashka/master/install) \
+          --dir bb --download-dir bb
+
+    - name: Run test
+      run: |
+        cp out/linux-amd64/pod-babashka-gozxing ./pod-babashka-gozxing
+        chmod +x ./pod-babashka-gozxing
+        PATH=$PATH:bb script/test
+
+    - name: Package release artifacts
+      run: |
+        VERSION=$(cat resources/POD_BABASHKA_GOZXING_VERSION)
+        mkdir -p release
+        zip -j "release/pod-babashka-gozxing-$VERSION-linux-amd64.zip"   out/linux-amd64/pod-babashka-gozxing
+        zip -j "release/pod-babashka-gozxing-$VERSION-linux-aarch64.zip" out/linux-aarch64/pod-babashka-gozxing
+        zip -j "release/pod-babashka-gozxing-$VERSION-macos-amd64.zip"   out/macos-amd64/pod-babashka-gozxing
+        zip -j "release/pod-babashka-gozxing-$VERSION-macos-aarch64.zip" out/macos-aarch64/pod-babashka-gozxing
+        zip -j "release/pod-babashka-gozxing-$VERSION-windows-amd64.zip" out/windows-amd64/pod-babashka-gozxing.exe
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: release/
+
+    # Only on a pushed tag (v*): publish a GitHub Release with the zips attached.
+    - name: Publish GitHub Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release/*.zip
+        generate_release_notes: true
