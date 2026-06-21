@@ -5,9 +5,9 @@
             [babashka.pods :as pods]
             [clojure.test :as t :refer [deftest is]]))
 
-(pods/load-pod "./pod-babashka-gozxing")
+(pods/load-pod "./pod-eggsylah-gozxing")
 
-(require '[pod.babashka.gozxing :as qr])
+(require '[pod.eggsylah.gozxing :as qr])
 
 (def tmp "test/out.png")
 

@@ -2,8 +2,10 @@
 
 set -euo pipefail
 
-CGO_ENABLED=0 go build -o pod-babashka-gozxing main.go
+podName="pod-eggsylah-gozxing"
+
+CGO_ENABLED=0 go build -o ${podName} main.go
 
 if [[ "${WINDOWS:-}" == "true" ]]; then
-    mv pod-babashka-gozxing pod-babashka-gozxing.exe
+    mv ${podName} ${podName}.exe
 fi

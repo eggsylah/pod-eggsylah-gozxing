@@ -15,7 +15,7 @@
   publish
   {:doc "Tag the current version and push, triggering the release workflow"
    :task
-   (let [version (str/trim (slurp "resources/POD_BABASHKA_GOZXING_VERSION"))
+   (let [version (str/trim (slurp "resources/POD_EGGSYLAH_GOZXING_VERSION"))
          tag (str "v" version)
          clean? (str/blank? (:out (shell {:out :string} "git status --porcelain")))
          existing (-> (shell {:out :string :continue true} "git tag --list" tag)

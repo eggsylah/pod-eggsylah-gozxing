@@ -13,12 +13,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/babashka/pod-babashka-gozxing/babashka"
+	"github.com/eggsylah/pod-eggsylah-gozxing/babashka"
 	"github.com/babashka/transit-go"
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
 )
 
+const podName = "pod.eggsylah.gozxing"
 func listToSlice(l *list.List) []interface{} {
 	slice := make([]interface{}, l.Len())
 	i := 0
@@ -127,7 +128,7 @@ func processMessage(message *babashka.Message) {
 				Format: "transit+json",
 				Namespaces: []babashka.Namespace{
 					{
-						Name: "pod.babashka.gozxing",
+						Name: podName,
 						Vars: []babashka.Var{
 							{Name: "decode"},
 							{Name: "encode"},
@@ -137,7 +138,7 @@ func processMessage(message *babashka.Message) {
 			})
 	case "invoke":
 		switch message.Var {
-		case "pod.babashka.gozxing/decode":
+		case podName + "/decode":
 			args, err := decodeArgs(message.Args)
 			if err != nil {
 				babashka.WriteErrorResponse(message, err)
@@ -153,7 +154,7 @@ func processMessage(message *babashka.Message) {
 				return
 			}
 			respond(message, text)
-		case "pod.babashka.gozxing/encode":
+		case podName + "/encode":
 			args, err := decodeArgs(message.Args)
 			if err != nil {
 				babashka.WriteErrorResponse(message, err)

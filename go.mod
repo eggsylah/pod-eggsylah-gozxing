@@ -1,4 +1,4 @@
-module github.com/babashka/pod-eggsylah-gozxing
+module github.com/eggsylah/pod-eggsylah-gozxing
 
 go 1.18
 
