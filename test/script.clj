@@ -24,39 +24,62 @@
     (qr/encode text tmp)
     (is (= text (qr/decode (fs/read-all-bytes tmp))))))
 
+(deftest round-trip-datamatrix-test
+  (let [text "https://babashka.org"]
+    (qr/encode text tmp {:format :DataMatrix :size 256})
+    (is (fs/exists? tmp))
+    (is (= text (qr/decode tmp {:format :DataMatrix})))))
+
+(deftest round-trip-code128-test
+  (let [text "https://babashka.org"]
+    (qr/encode text tmp {:format :Code128 :size 256})
+    (is (fs/exists? tmp))
+    (is (= text (qr/decode tmp {:format :Code128})))))
+
+(deftest round-trip-code39-test
+  (let [text "8901234567890123456"]
+    (qr/encode text tmp {:format :Code39 :size 256})
+    (is (fs/exists? tmp))
+    (is (= text (qr/decode tmp {:format :Code39})))))
+
+(deftest round-trip-upca-test
+  (let [text "725272730706"]
+    (qr/encode text tmp {:format :UPC-A :size 256})
+    (is (fs/exists? tmp))
+    (is (= text (qr/decode tmp {:format :UPC-A})))))
 
 (deftest size-option-test
-  (let [text "https://babashka.org"]
-    (qr/encode text tmp {:size 512})
+  (let [text "725272730706"]
+    (qr/encode text tmp {:format :UPC-A :size 512})
     (is (fs/exists? tmp))
     (fs/delete-if-exists tmp)
-    (qr/encode text tmp {:size 512.0})   ;float
+    (qr/encode text tmp {:format :UPC-A :size 512.0})   ;float
     (is (fs/exists? tmp))
     (fs/delete-if-exists tmp)
-    (qr/encode text tmp {:size 512N})   ;big int
+    (qr/encode text tmp {:format :UPC-A :size 512N})   ;big int
     (is (fs/exists? tmp))
     (fs/delete-if-exists tmp)
-    (qr/encode text tmp {:size (/ 1024 3)})   ;rational
+    (qr/encode text tmp {:format :UPC-A :size (/ 1024 3)})   ;rational
     (is (fs/exists? tmp))
     (fs/delete-if-exists tmp)
-    (qr/encode text tmp {:size [512 256]})   ;vector
+    (qr/encode text tmp {:format :UPC-A :size [368 32]})   ;vector
     (is (fs/exists? tmp))
     (fs/delete-if-exists tmp)
 
     (is (thrown-with-msg? Exception #"value should be a number not bad, a string"
-                          (qr/encode text tmp {:size "bad"})))
+                          (qr/encode text tmp {:format :UPC-A :size "bad"})))
 
     (is (thrown-with-msg? Exception #"value should be a number not :T, a transit.Keyword"
-                          (qr/encode text tmp {:size :T})))
+                          (qr/encode text tmp {:format :UPC-A :size :T})))
 
     (is (thrown-with-msg? Exception #"size must be a number or a 2-vector of numbers not \[1]"
-                          (qr/encode text tmp {:size [1]})))
+                          (qr/encode text tmp {:format :UPC-A :size [1]})))
 
     (is (thrown-with-msg? Exception #"size must be a number or a 2-vector of numbers not \[200 201 202]"
-                          (qr/encode text tmp {:size [200 201 202]})))
+                          (qr/encode text tmp {:format :UPC-A :size [200 201 202]})))
 
     (is (thrown-with-msg? Exception #"value should be a number not ABC, a string"
-                          (qr/encode text tmp {:size ["ABC" 256]})))
+                          (qr/encode text tmp {:format :UPC-A :size ["ABC" 256]})))
     ))
 
 (deftest arg-test
@@ -97,6 +120,9 @@
     (is (thrown-with-msg? Exception #"ec-level must be one of L/M/Q/H not :Z"
                           (qr/encode text tmp {:ec-level :Z}))
         "check error if invalid ec-level used")
+    (is (thrown-with-msg? Exception #"ec-level only supported for QR barcode encoding"
+                          (qr/encode text tmp {:format :DataMatrix :ec-level :H}))
+        "ec-level option only supported for QR encoding")
     (is (thrown-with-msg? Exception #"unsupported decode option: :ec-level"
                           (qr/decode tmp {:ec-level :H}))
         "ec-level option not supported for QR decoding")
@@ -107,6 +133,9 @@
   (let [text "725272730706"]
     (is (thrown-with-msg? Exception #"unsupported encode option: :bad-option"
                           (qr/encode text tmp {:bad-option 5})))
+    (is (thrown-with-msg? Exception #"Unsupported barcode format for encode: :PDF417"
+                          (qr/encode text tmp {:format :PDF417}))
+        "unsupported barcode PDF417 (sadly)")
     (is (thrown-with-msg? Exception #"unsupported decode option: :bad-option"
                           (qr/decode tmp {:bad-option 5})))
     ))
@@ -124,7 +153,7 @@
                   (string/join "-" x)
                   (str x ".png"))
         file2 (str "test/references/" file1)
-        opts {:size size}]
+        opts {:format barcode :size size}]
     (qr/encode text file1 (if (some? ec-level) (assoc opts :ec-level ec-level) opts))
     (is (files-equal file1 file2) (str "Compare " file1 " and " file2))
     (fs/delete-if-exists file1))))
@@ -134,6 +163,11 @@
     (file-compare-tst :QR  512 :Q "https://babashka.org")
     (file-compare-tst :QR  768 :M "https://babashka.org")
     (file-compare-tst :QR 1024 :L "https://babashka.org")
+    (file-compare-tst :DataMatrix 256 "https://babashka.org")
+    (file-compare-tst :DataMatrix 512 "https://babashka.org")
+    (file-compare-tst :UPC-A [112 32] "725272730706")
+    (file-compare-tst :Code128 [192 32] "8901234567890123456")
+    (file-compare-tst :Code39 [320 32] "8901234567890123456")
   )
 
 (let [{:keys [fail error]} (t/run-tests)]
