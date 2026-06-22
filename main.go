@@ -92,7 +92,7 @@ func optSize(opts interface{}) int {
 	size := 256
 	if m, ok := opts.(map[interface{}]interface{}); ok {
 		for k, v := range m {
-			if fmt.Sprintf("%v", k) == "size" {
+			if fmt.Sprintf("%v", k) == ":size" {
 				switch n := v.(type) {
 				case int64:
 					size = int(n)
