@@ -80,6 +80,29 @@
                           (qr/decode ".")))
     ))
 
+(deftest ec-level-option-test
+  (let [text "725272730706"]
+    (qr/encode text tmp {:ec-level :L})
+    (is (fs/exists? tmp))
+    (fs/delete-if-exists tmp)
+    (qr/encode text tmp {:ec-level :M})
+    (is (fs/exists? tmp))
+    (fs/delete-if-exists tmp)
+    (qr/encode text tmp {:ec-level :Q})
+    (is (fs/exists? tmp))
+    (fs/delete-if-exists tmp)
+    (qr/encode text tmp {:ec-level :H})
+    (is (fs/exists? tmp))
+    (fs/delete-if-exists tmp)
+    (is (thrown-with-msg? Exception #"ec-level must be one of L/M/Q/H not :Z"
+                          (qr/encode text tmp {:ec-level :Z}))
+        "check error if invalid ec-level used")
+    (is (thrown-with-msg? Exception #"unsupported decode option: :ec-level"
+                          (qr/decode tmp {:ec-level :H}))
+        "ec-level option not supported for QR decoding")
+    ))
+
+
 (deftest option-test
   (let [text "725272730706"]
     (is (thrown-with-msg? Exception #"unsupported encode option: :bad-option"
@@ -93,20 +116,24 @@
   (zero? (:exit d))))
 
 (defn file-compare-tst 
-  [barcode size text] 
+  ([barcode size text] (file-compare-tst barcode size nil text))
+  ([barcode size ec-level text] 
   (let [ssize (if (vector? size) (string/join "x" size) size)
         file1 (as-> [(name barcode) ssize] x
-                  (conj x "L")
+                  (if ec-level (conj x (name ec-level)) x)
                   (string/join "-" x)
                   (str x ".png"))
         file2 (str "test/references/" file1)
         opts {:size size}]
-    (qr/encode text file1 opts)
+    (qr/encode text file1 (if (some? ec-level) (assoc opts :ec-level ec-level) opts))
     (is (files-equal file1 file2) (str "Compare " file1 " and " file2))
-    (fs/delete-if-exists file1)))
+    (fs/delete-if-exists file1))))
 
 (deftest reference-test
-    (file-compare-tst :QR 1024 "https://babashka.org")
+    (file-compare-tst :QR  256 :H "https://babashka.org")
+    (file-compare-tst :QR  512 :Q "https://babashka.org")
+    (file-compare-tst :QR  768 :M "https://babashka.org")
+    (file-compare-tst :QR 1024 :L "https://babashka.org")
   )
 
 (let [{:keys [fail error]} (t/run-tests)]

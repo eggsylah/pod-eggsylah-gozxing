@@ -151,8 +151,26 @@ func getSize(opts map[string]interface{}) (sizeX int, sizeY int, err error) {
 	return sizeX, sizeY, err
 }
 
-func qrEncode(text string, path string, sizeX int, sizeY int) error {
-	bmp, err := qrcode.NewQRCodeWriter().Encode(text, gozxing.BarcodeFormat_QR_CODE, sizeX, sizeY, nil)
+func getECLevel(opts map[string]interface{}) (ecLevel string, err error) {
+	ecLevel, err = "", nil
+
+	v := opts[":ec-level"]
+	if v != nil {
+		val := fmt.Sprintf("%v", v)
+		ecLevel = val
+		if ecLevel[0] == ':' { // hack so keyword maps to string
+			ecLevel = ecLevel[1:]
+		}
+		if len(ecLevel) > 1 || strings.Index("LMQH", ecLevel) < 0 {
+			err = errors.New(fmt.Sprintf("ec-level must be one of L/M/Q/H not %s", val))
+		}
+	}
+	return ecLevel, err
+}
+
+func qrEncode(text string, path string, sizeX int, sizeY int, ecLevel string) error {
+	hints := map[gozxing.EncodeHintType]interface{}{gozxing.EncodeHintType_ERROR_CORRECTION: ecLevel}
+	bmp, err := qrcode.NewQRCodeWriter().Encode(text, gozxing.BarcodeFormat_QR_CODE, sizeX, sizeY, hints)
 	if err != nil {
 		return err
 	}
@@ -215,20 +233,26 @@ func processEncode(message *babashka.Message) {
 	}
 	// defaults ...
 	sizeX, sizeY := 256, 256
+	ecLevel := ""
 	if err == nil && len(args) >= 3 {
 		optMap := getOptionsMap(args[2])
 		for k, _ := range optMap {
 			switch k {
 			case ":size":
 				sizeX, sizeY, err = getSize(optMap)
+			case ":ec-level":
+				ecLevel, err = getECLevel(optMap)
 			default:
 				err = errors.New(fmt.Sprintf("unsupported encode option: %s", k))
 			}
 		}
 	}
+	if ecLevel == "" {
+		ecLevel = "L"
+	}
 
 	if err == nil {
-		err = qrEncode(text, path, sizeX, sizeY)
+		err = qrEncode(text, path, sizeX, sizeY, ecLevel)
 	}
 	if err == nil {
 		respond(message, path)
