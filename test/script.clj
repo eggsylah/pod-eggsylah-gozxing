@@ -42,6 +42,18 @@
     (is (fs/exists? tmp))
     (is (= text (qr/decode tmp {:format :Code39})))))
 
+(deftest round-trip-ean13-test
+  (let [text "9780130305527"]
+    (qr/encode text tmp {:format :EAN-13 :size [220 96]})
+    (is (fs/exists? tmp))
+    (is (= text (qr/decode tmp {:format :EAN-13})))))
+
+(deftest round-trip-itf-test
+  (let [text "89012345678901234563"]
+    (qr/encode text tmp {:format :ITF :size [220 32]})
+    (is (fs/exists? tmp))
+    (is (= text (qr/decode tmp {:format :ITF})))))
+
 (deftest round-trip-upca-test
   (let [text "725272730706"]
     (qr/encode text tmp {:format :UPC-A :size 256})
@@ -50,7 +62,7 @@
 
 (deftest size-option-test
   (let [text "725272730706"]
-    (qr/encode text tmp {:format :UPC-A :size 512})
+    (qr/encode text tmp {:format :UPC-A :size 512})     ;int
     (is (fs/exists? tmp))
     (fs/delete-if-exists tmp)
     (qr/encode text tmp {:format :UPC-A :size 512.0})   ;float
@@ -168,6 +180,8 @@
     (file-compare-tst :UPC-A [112 32] "725272730706")
     (file-compare-tst :Code128 [192 32] "8901234567890123456")
     (file-compare-tst :Code39 [320 32] "8901234567890123456")
+    (file-compare-tst :EAN-13 [220 96] "9780130305527")
+    (file-compare-tst :ITF [220 32] "89012345678901234563")
   )
 
 (let [{:keys [fail error]} (t/run-tests)]

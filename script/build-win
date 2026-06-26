@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+podName="pod-eggsylah-gozxing"
+
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o ${podName}.exe main.go

@@ -1,4 +1,4 @@
-# pod-babashka-gozxing
+# pod-eggsylah-gozxing
 
 A [babashka](https://github.com/babashka/babashka) pod for reading and writing
 QR codes, backed by the Go library
@@ -13,41 +13,68 @@ does image decoding and QR processing out of process.
 
 ```clojure
 (require '[babashka.pods :as pods])
-(pods/load-pod 'org.babashka/gozxing "0.0.1")
+(pods/load-pod 'org.babashka/gozxing "0.0.2")
 ;; or load a local build:
-;; (pods/load-pod "./pod-babashka-gozxing")
-(require '[pod.babashka.gozxing :as qr])
+;; (pods/load-pod "./pod-eggsylah-gozxing")
+(require '[pod.eggsylah.gozxing :as barcode])
 
-;; encode text into a QR png
-(qr/encode "https://babashka.org" "out.png")
-(qr/encode "https://babashka.org" "out.png" {:size 512})
+;; encode text into a QR png with different error-correcting levels and sizes
+(barcode/encode "https://babashka.org" "out.png")
+(barcode/encode "https://babashka.org" "out.png" {:format :QR})
+(barcode/encode "https://babashka.org" "out.png" {:ec-level :H})
+(barcode/encode "https://babashka.org" "out.png" {:size 512})
+
+;; encode text into a DataMatrix png 
+(barcode/encode "https://babashka.org" "out.png" {:format :DataMatrix})
+
+;; encode text into a 1D barcode of different formats and sizes
+(barcode/encode "89012345678901234563" "code128.png" {:format :Code128 :size [220 48]})
+(barcode/encode "89012345678901234563" "code39.png" {:format :Code39 :size [256 24]})
+(barcode/encode "725272730706" "upc-a.png" {:format :UPC-A})
 
 ;; decode a QR from a file path
-(qr/decode "out.png") ;;=> "https://babashka.org"
+(barcode/decode "out.png") ;;=> "https://babashka.org"
 
-;; decode from raw image bytes
+;; decode a QR code from raw image bytes
 (require '[babashka.fs :as fs])
-(qr/decode (fs/read-all-bytes "out.png"))
+(barcode/decode (fs/read-all-bytes "out.png"))
 ```
 
 ### `decode`
 
-`(decode path-or-bytes)` - reads a QR code from a PNG/JPEG/GIF file path or raw
-image bytes. Returns the decoded text. Throws if no QR code is found.
+`(decode path-or-bytes)` / `(decode path-or-bytes opts)` - reads a QR code from a PNG/JPEG/GIF file path or raw
+image bytes. Returns the decoded text. Throws error if no barcode is found.
+
+Options:
+- `:format` - barcode format to use, `:DataMatrix`, `:QR`, `:Code-128`, `:Code-39`, `:EAN-13`, `:ITF`, :`UPC-A`  (default `:QR`)
 
 ### `encode`
 
-`(encode text path)` / `(encode text path opts)` - writes `text` as a QR code
-PNG to `path`. Options:
+`(encode text path)` / `(encode text path opts)` - writes `text` as specified barcode
+PNG to `path`. 
 
+Options:
+- `:format` - barcode format to use, `:DataMatrix`, `:QR`, `:Code-128`, `:Code-39`, `:EAN-13`, `:ITF`, :`UPC-A`  (default `:QR`)
 - `:size` - width/height in pixels (default `256`)
+   For a 1D barcode the width and height of the barcode can be specified as a vector, such as [192 32]
+- `:ec-level` - error-correcting level for QR codes `:H` (high, 30%), `:Q` (quartile, 25%), `:M` (medium, 15%), 
+   `:L` (low, 7%) width/height in pixels (default `:L`)
+   This option is only supported for QR codes.
+
+
 
 Returns the output path.
 
 ## Build
 
+Build for current platform
 ```bash
 script/build
+```
+
+Cross-compile for 64-bit Windows
+```bash
+script/build-win
 ```
 
 ## Test

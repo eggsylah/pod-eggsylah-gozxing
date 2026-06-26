@@ -92,6 +92,10 @@ func decode(barcodeFormat string, arg interface{}) (string, error) {
 		result, err = oned.NewCode128Reader().Decode(bmp, nil)
 	case ":Code39":
 		result, err = oned.NewCode39Reader().Decode(bmp, nil)
+	case ":EAN-13":
+		result, err = oned.NewEAN13Reader().Decode(bmp, nil)
+	case ":ITF":
+		result, err = oned.NewITFReader().Decode(bmp, nil)
 	case ":QR":
 		result, err = qrcode.NewQRCodeReader().Decode(bmp, nil)
 	case ":DataMatrix":
@@ -192,6 +196,10 @@ func encode(barcodeFormat string, text string, path string, sizeX int, sizeY int
 		bmp, err = oned.NewCode128Writer().Encode(text, gozxing.BarcodeFormat_CODE_128, sizeX, sizeY, nil)
 	case ":Code39":
 		bmp, err = oned.NewCode39Writer().Encode(text, gozxing.BarcodeFormat_CODE_39, sizeX, sizeY, nil)
+	case ":EAN-13":
+		bmp, err = oned.NewEAN13Writer().Encode(text, gozxing.BarcodeFormat_EAN_13, sizeX, sizeY, nil)
+	case ":ITF":
+		bmp, err = oned.NewITFWriter().Encode(text, gozxing.BarcodeFormat_ITF, sizeX, sizeY, nil)
 	case ":UPC-A":
 		bmp, err = oned.NewUPCAWriter().Encode(text, gozxing.BarcodeFormat_UPC_A, sizeX, sizeY, nil)
 	case ":QR":
